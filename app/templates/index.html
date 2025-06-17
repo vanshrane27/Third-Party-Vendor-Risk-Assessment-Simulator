@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Third-Party Vendor Risk Assessment{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 text-center">
+        <h1 class="display-4 mb-4">Third-Party Vendor Risk Assessment</h1>
+        <p class="lead mb-4">
+            Streamline your vendor security assessments with our comprehensive risk evaluation tool.
+            Based on industry standards including NIST, ISO 27001, and PCI DSS.
+        </p>
+        
+        <div class="row mb-5">
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Comprehensive Assessment</h5>
+                        <p class="card-text">Evaluate vendors against multiple security frameworks and standards.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Risk Scoring</h5>
+                        <p class="card-text">Automated risk scoring based on industry best practices.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Detailed Reports</h5>
+                        <p class="card-text">Generate comprehensive PDF reports with findings and recommendations.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+            <a href="{{ url_for('main.new_assessment') }}" class="btn btn-primary btn-lg px-4 gap-3">
+                Start New Assessment
+            </a>
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-lg px-4">
+                View Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-12">
+        <h2 class="text-center mb-4">Supported Frameworks</h2>
+        <div class="row justify-content-center">
+            <div class="col-md-3 text-center">
+                <h5>NIST</h5>
+                <p>NIST Cybersecurity Framework</p>
+            </div>
+            <div class="col-md-3 text-center">
+                <h5>ISO 27001</h5>
+                <p>Information Security Management</p>
+            </div>
+            <div class="col-md-3 text-center">
+                <h5>PCI DSS</h5>
+                <p>Payment Card Industry Standards</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

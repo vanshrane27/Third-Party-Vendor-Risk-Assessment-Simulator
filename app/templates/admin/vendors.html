@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>All Vendors</h1>
+        <a href="{{ url_for('main.new_assessment') }}" class="btn btn-primary">
+            New Assessment
+        </a>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" name="q" 
+                           placeholder="Search vendors..." value="{{ request.args.get('q', '') }}">
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="industry">
+                        <option value="">All Industries</option>
+                        <option value="tech" {% if request.args.get('industry') == 'tech' %}selected{% endif %}>
+                            Technology
+                        </option>
+                        <option value="healthcare" {% if request.args.get('industry') == 'healthcare' %}selected{% endif %}>
+                            Healthcare
+                        </option>
+                        <option value="finance" {% if request.args.get('industry') == 'finance' %}selected{% endif %}>
+                            Finance
+                        </option>
+                        <option value="retail" {% if request.args.get('industry') == 'retail' %}selected{% endif %}>
+                            Retail
+                        </option>
+                        <option value="other" {% if request.args.get('industry') == 'other' %}selected{% endif %}>
+                            Other
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="risk_level">
+                        <option value="">All Risk Levels</option>
+                        <option value="Low Risk" {% if request.args.get('risk_level') == 'Low Risk' %}selected{% endif %}>
+                            Low Risk
+                        </option>
+                        <option value="Medium Risk" {% if request.args.get('risk_level') == 'Medium Risk' %}selected{% endif %}>
+                            Medium Risk
+                        </option>
+                        <option value="High Risk" {% if request.args.get('risk_level') == 'High Risk' %}selected{% endif %}>
+                            High Risk
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Search</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Vendors List -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Vendor Name</th>
+                            <th>Industry</th>
+                            <th>Email</th>
+                            <th>Latest Assessment</th>
+                            <th>Risk Level</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for vendor in vendors.items %}
+                        <tr>
+                            <td>{{ vendor.name }}</td>
+                            <td>{{ vendor.industry }}</td>
+                            <td>{{ vendor.email }}</td>
+                            <td>
+                                {% if vendor.assessments %}
+                                    {{ vendor.assessments[-1].created_at.strftime('%Y-%m-%d') }}
+                                {% else %}
+                                    No assessments
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if vendor.assessments %}
+                                    <span class="badge {% if vendor.assessments[-1].risk_classification == 'High Risk' %}bg-danger
+                                                  {% elif vendor.assessments[-1].risk_classification == 'Medium Risk' %}bg-warning
+                                                  {% else %}bg-success{% endif %}">
+                                        {{ vendor.assessments[-1].risk_classification }}
+                                    </span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('main.new_assessment') }}?vendor_id={{ vendor.id }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        New Assessment
+                                    </a>
+                                    {% if vendor.assessments %}
+                                    <a href="{{ url_for('main.assessment_result', assessment_id=vendor.assessments[-1].id) }}" 
+                                       class="btn btn-sm btn-outline-secondary">
+                                        View Latest
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if vendors.pages > 1 %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if vendors.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('main.admin_vendors', page=vendors.prev_num) }}">
+                            Previous
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for page_num in vendors.iter_pages(left_edge=2, left_current=2, right_current=3, right_edge=2) %}
+                        {% if page_num %}
+                            <li class="page-item {% if page_num == vendors.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('main.admin_vendors', page=page_num) }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if vendors.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('main.admin_vendors', page=vendors.next_num) }}">
+                            Next
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

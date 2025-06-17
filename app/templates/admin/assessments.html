@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>All Assessments</h1>
+        <a href="{{ url_for('main.new_assessment') }}" class="btn btn-primary">
+            New Assessment
+        </a>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" name="q" 
+                           placeholder="Search vendors..." value="{{ request.args.get('q', '') }}">
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="risk_level">
+                        <option value="">All Risk Levels</option>
+                        <option value="Low Risk" {% if request.args.get('risk_level') == 'Low Risk' %}selected{% endif %}>
+                            Low Risk
+                        </option>
+                        <option value="Medium Risk" {% if request.args.get('risk_level') == 'Medium Risk' %}selected{% endif %}>
+                            Medium Risk
+                        </option>
+                        <option value="High Risk" {% if request.args.get('risk_level') == 'High Risk' %}selected{% endif %}>
+                            High Risk
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="date" class="form-control" name="date_from" 
+                           value="{{ request.args.get('date_from', '') }}" placeholder="From Date">
+                </div>
+                <div class="col-md-2">
+                    <input type="date" class="form-control" name="date_to" 
+                           value="{{ request.args.get('date_to', '') }}" placeholder="To Date">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Search</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Assessments List -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Vendor</th>
+                            <th>Assessment Date</th>
+                            <th>Risk Score</th>
+                            <th>Risk Level</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for assessment in assessments.items %}
+                        <tr>
+                            <td>{{ assessment.vendor.name }}</td>
+                            <td>{{ assessment.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ assessment.total_risk_score }}</td>
+                            <td>
+                                <span class="badge {% if assessment.risk_classification == 'High Risk' %}bg-danger
+                                              {% elif assessment.risk_classification == 'Medium Risk' %}bg-warning
+                                              {% else %}bg-success{% endif %}">
+                                    {{ assessment.risk_classification }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('main.assessment_result', assessment_id=assessment.id) }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        View
+                                    </a>
+                                    <a href="{{ url_for('main.download_pdf', assessment_id=assessment.id) }}" 
+                                       class="btn btn-sm btn-outline-secondary">
+                                        PDF
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if assessments.pages > 1 %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if assessments.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('main.admin_assessments', 
+                            page=assessments.prev_num,
+                            q=request.args.get('q', ''),
+                            risk_level=request.args.get('risk_level', ''),
+                            date_from=request.args.get('date_from', ''),
+                            date_to=request.args.get('date_to', '')) }}">
+                            Previous
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for page_num in assessments.iter_pages(left_edge=2, left_current=2, right_current=3, right_edge=2) %}
+                        {% if page_num %}
+                            <li class="page-item {% if page_num == assessments.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('main.admin_assessments', 
+                                    page=page_num,
+                                    q=request.args.get('q', ''),
+                                    risk_level=request.args.get('risk_level', ''),
+                                    date_from=request.args.get('date_from', ''),
+                                    date_to=request.args.get('date_to', '')) }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if assessments.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('main.admin_assessments', 
+                            page=assessments.next_num,
+                            q=request.args.get('q', ''),
+                            risk_level=request.args.get('risk_level', ''),
+                            date_from=request.args.get('date_from', ''),
+                            date_to=request.args.get('date_to', '')) }}">
+                            Next
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

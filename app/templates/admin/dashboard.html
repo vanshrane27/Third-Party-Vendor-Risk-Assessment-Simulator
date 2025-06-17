@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Vendor Risk Assessment{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Admin Dashboard</h1>
+        <div class="d-flex gap-2">
+            <div class="input-group" style="width: 300px;">
+                <input type="text" class="form-control" id="searchInput" placeholder="Search vendors...">
+                <button class="btn btn-outline-secondary" type="button" id="searchButton">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+            <button class="btn btn-primary" onclick="window.location.href='{{ url_for('main.new_assessment') }}'">
+                <i class="fas fa-plus"></i> New Assessment
+            </button>
+        </div>
+    </div>
+    
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">Total Assessments</h6>
+                            <h2 class="card-text mb-0">{{ total_assessments }}</h2>
+                        </div>
+                        <i class="fas fa-clipboard-list fa-2x opacity-50"></i>
+                    </div>
+                    <small class="text-white-50">Last 30 days: {{ recent_assessments|length }}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">High Risk</h6>
+                            <h2 class="card-text mb-0">{{ high_risk }}</h2>
+                        </div>
+                        <i class="fas fa-exclamation-triangle fa-2x opacity-50"></i>
+                    </div>
+                    <small class="text-white-50">{{ (high_risk / total_assessments * 100)|round(1) }}% of total</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">Medium Risk</h6>
+                            <h2 class="card-text mb-0">{{ medium_risk }}</h2>
+                        </div>
+                        <i class="fas fa-exclamation-circle fa-2x opacity-50"></i>
+                    </div>
+                    <small class="text-white-50">{{ (medium_risk / total_assessments * 100)|round(1) }}% of total</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">Low Risk</h6>
+                            <h2 class="card-text mb-0">{{ low_risk }}</h2>
+                        </div>
+                        <i class="fas fa-check-circle fa-2x opacity-50"></i>
+                    </div>
+                    <small class="text-white-50">{{ (low_risk / total_assessments * 100)|round(1) }}% of total</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Risk Distribution and Industry Stats -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Risk Distribution</h5>
+                    <canvas id="riskChart" height="300"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Industry Distribution</h5>
+                    <canvas id="industryChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Risk Score Trend and Recent Assessments -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Risk Score Trend</h5>
+                    <canvas id="trendChart" height="300"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">Recent Assessments</h5>
+                        <a href="{{ url_for('main.admin_assessments') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                    </div>
+                    <div class="list-group">
+                        {% for assessment in recent_assessments %}
+                        <a href="{{ url_for('main.assessment_result', assessment_id=assessment.id) }}" 
+                           class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ assessment.vendor.name }}</h6>
+                                    <small class="text-muted">{{ assessment.vendor.industry|title }}</small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-{{ 'danger' if assessment.risk_classification == 'High Risk' else 'warning' if assessment.risk_classification == 'Medium Risk' else 'success' }}">
+                                        {{ assessment.risk_classification }}
+                                    </span>
+                                    <div class="small text-muted">{{ assessment.created_at.strftime('%Y-%m-%d') }}</div>
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Risk distribution chart
+    const riskCtx = document.getElementById('riskChart').getContext('2d');
+    new Chart(riskCtx, {
+        type: 'pie',
+        data: {
+            labels: ['High Risk', 'Medium Risk', 'Low Risk'],
+            datasets: [{
+                data: [{{ high_risk }}, {{ medium_risk }}, {{ low_risk }}],
+                backgroundColor: ['#dc3545', '#ffc107', '#28a745']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // Industry distribution chart
+    const industryCtx = document.getElementById('industryChart').getContext('2d');
+    new Chart(industryCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ industry_labels|tojson }},
+            datasets: [{
+                label: 'Number of Vendors',
+                data: {{ industry_counts|tojson }},
+                backgroundColor: {{ industry_colors|tojson }},
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.raw} vendor${context.raw !== 1 ? 's' : ''}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1,
+                        precision: 0
+                    },
+                    title: {
+                        display: true,
+                        text: 'Number of Vendors'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Industry'
+                    }
+                }
+            }
+        }
+    });
+
+    // Risk score trend chart
+    const trendCtx = document.getElementById('trendChart').getContext('2d');
+    new Chart(trendCtx, {
+        type: 'line',
+        data: {
+            labels: {{ trend_dates|tojson }},
+            datasets: [{
+                label: 'Average Risk Score',
+                data: {{ trend_scores|tojson }},
+                borderColor: '#0d6efd',
+                backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                tension: 0.4,
+                fill: true,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `Risk Score: ${context.raw.toFixed(1)}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Risk Score'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    }
+                }
+            }
+        }
+    });
+
+    // Search functionality
+    document.getElementById('searchButton').addEventListener('click', function() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const assessmentLinks = document.querySelectorAll('.list-group-item');
+        
+        assessmentLinks.forEach(link => {
+            const vendorName = link.querySelector('h6').textContent.toLowerCase();
+            if (vendorName.includes(searchTerm)) {
+                link.style.display = '';
+            } else {
+                link.style.display = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %} 
